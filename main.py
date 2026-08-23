@@ -31,7 +31,18 @@ def mirror(func: Callable) -> FunctionInfo:
     except (ValueError, TypeError):
         signature = None
 
-    annotations = _attr(func, "__annotations__") or {}
+    # 从签名推导注解 —— partial / 实例 / 类这些没有 __annotations__ 的
+    # callable，才能拿到真实生效的注解，而不是为空或类属性。
+    if signature is not None:
+        annotations = {
+            pname: p.annotation
+            for pname, p in signature.parameters.items()
+            if p.annotation is not inspect.Parameter.empty
+        }
+        if signature.return_annotation is not inspect.Signature.empty:
+            annotations["return"] = signature.return_annotation
+    else:
+        annotations = {}
 
     defaults = _attr(func, "__defaults__")
     if defaults is None: defaults = ()
@@ -69,16 +80,42 @@ if __name__ == "__main__":  # pragma: no cover
         return f"hi {name}, age {age}, excited={excited}"
 
     info = mirror(greet)
-    print(f"name            = {info.name!r}")
-    print(f"qualname        = {info.qualname!r}")
-    print(f"signature       = {info.signature}")
-    print(f"annotations     = {info.annotations}")
-    print(f"defaults        = {info.defaults}")
-    print(f"kwdefaults      = {info.kwdefaults}")
-    print(f"is_coroutine    = {info.is_coroutine}")
-    print(f"is_async_gen    = {info.is_async_generator}")
-    print(f"doc             = {info.doc!r}")
-    print(f"source (first)  = {info.source.splitlines()[0] if info.source else None!r}")
+    # print(f"name            = {info.name!r}")
+    # print(f"qualname        = {info.qualname!r}")
+    # print(f"signature       = {info.signature}")
+    # print(f"annotations     = {info.annotations}")
+    # print(f"defaults        = {info.defaults}")
+    # print(f"kwdefaults      = {info.kwdefaults}")
+    # print(f"is_coroutine    = {info.is_coroutine}")
+    # print(f"is_async_gen    = {info.is_async_generator}")
+    # print(f"doc             = {info.doc!r}")
+    # print(f"source (first)  = {info.source.splitlines()[0] if info.source else None!r}")
+    name = f'{info.name!r}'
+    qualname = f'{info.qualname!r}'
+    signature = f'{info.signature}'
+    annotations = f'{info.annotations}'
+    defaults = f'{info.defaults}'
+    kwdefaults = f'{info.kwdefaults}'
+    is_coroutine = f'{info.is_coroutine}'
+    is_async_generator = f'{info.is_async_generator}'
+    doc = f'{info.doc!r}'
+    source = f'{info.source.splitlines()[0] if info.source else None!r}'
+    v = r'''    def greet(name: str, age: int = 18, *, excited: bool = False) -> str:
+        """跟某人打招呼。"""
+        return f"hi {name}, age {age}, excited={excited}"
+
+    info = mirror(greet)
+    print(f"name            = {info.name!r}") # 
+    print(f"qualname        = {info.qualname!r}") # 
+    print(f"signature       = {info.signature}") # 
+    print(f"annotations     = {info.annotations}") # 
+    print(f"defaults        = {info.defaults}") # 
+    print(f"kwdefaults      = {info.kwdefaults}") # 
+    print(f"is_coroutine    = {info.is_coroutine}") # 
+    print(f"is_async_gen    = {info.is_async_generator}") # 
+    print(f"doc             = {info.doc!r}") # 
+    print(f"source (first)  = {info.source.splitlines()[0] if info.source else None!r}") # 
+    '''
 
     # 鲁棒性：对 partial / 类 / C 内建函数也不崩。
     from functools import partial

@@ -71,7 +71,8 @@ def test_partial():
 
     info = mirror(partial(add, 10))
     assert info.name == "partial"
-    assert info.annotations == {}  # partial 没有 __annotations__
+    # 注解从有效签名推导：a 已被绑定，只剩 b 和 return
+    assert info.annotations == {"b": int, "return": int}
     assert info.source is None  # partial 是 C 类型，没有源码
     assert info.signature is not None
 
@@ -83,6 +84,8 @@ def test_callable_instance():
 
     info = mirror(Fancy())
     assert info.name == "Fancy"  # 没 __name__，退回类名
+    # 注解来自 __call__ 的签名，而不是空
+    assert info.annotations == {"x": int, "return": int}
     assert info.signature is not None
 
 
