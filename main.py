@@ -1,4 +1,5 @@
 import inspect
+from functools import cached_property
 from typing import Callable, Any
 from dataclasses import dataclass
 
@@ -12,15 +13,15 @@ class FunctionInfo:
             if (val := getattr(self._func, n, None)) is not None: return val
         return None
 
-    @property
+    @cached_property
     def name(self) -> str:
         return self._attr("__name__", "__qualname__") or type(self._func).__name__
 
-    @property
+    @cached_property
     def qualname(self) -> str:
         return self._attr("__qualname__", "__name__") or self.name
 
-    @property
+    @cached_property
     def signature(self) -> inspect.Signature | None:
         try:
             signature = inspect.signature(self._func)
@@ -29,7 +30,7 @@ class FunctionInfo:
 
         return signature
 
-    @property
+    @cached_property
     def annotations(self) -> dict[str, Any]:
         sign = self.signature
         if sign is not None:
@@ -45,30 +46,30 @@ class FunctionInfo:
 
         return annotations
 
-    @property
+    @cached_property
     def defaults(self) -> tuple[Any, ...]:
         return self._attr("__defaults__") or ()
 
-    @property
+    @cached_property
     def kwdefaults(self) -> dict[str, Any]:
         return self._attr("__kwdefaults__") or {}
 
-    @property
+    @cached_property
     def is_coroutine(self) -> bool:
         return inspect.iscoroutinefunction(self._func)
 
-    @property
+    @cached_property
     def is_async_generator(self) -> bool:
         return inspect.isasyncgenfunction(self._func)
 
-    @property
+    @cached_property
     def doc(self) -> str | None:
         try:
             return inspect.getdoc(self._func)
         except (ValueError, TypeError):
             return None
 
-    @property
+    @cached_property
     def source(self) -> str | None:
         try:
             return inspect.getsource(self._func)
